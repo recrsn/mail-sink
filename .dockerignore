@@ -1,0 +1,43 @@
+# Binary
+mail-sink
+
+# Dependency directories
+ui/node_modules/
+
+# Build outputs
+ui/dist/
+
+# Log files
+*.log
+
+# Mac OS
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# NPM/Yarn
+package-lock.json
+yarn.lock
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*

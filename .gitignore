@@ -1,0 +1,35 @@
+# Binary
+mail-sink
+
+# Dependency directories
+node_modules/
+vendor/
+
+# Build outputs
+ui/dist/
+
+# Log files
+*.log
+
+# Mac OS
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# NPM/Yarn
+package-lock.json
+yarn.lock
