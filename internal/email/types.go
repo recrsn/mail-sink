@@ -9,7 +9,7 @@ type Attachment struct {
 	Filename    string `json:"filename"`
 	ContentType string `json:"contentType"`
 	Size        int    `json:"size"`
-	Content     string `json:"content"`
+	Content     []byte `json:"content"`
 }
 
 type Email struct {

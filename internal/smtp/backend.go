@@ -5,11 +5,14 @@ import (
 	"io"
 	"net/mail"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/emersion/go-smtp"
 	"github.com/recrsn/mail-sink/internal/email"
 )
+
+var emailCounter int64
 
 type Backend struct {
 	store *email.Store
@@ -63,8 +66,11 @@ func (s *Session) Data(r io.Reader) error {
 
 	textBody, htmlBody, attachments := email.ExtractMessageParts(msg.Body, headers)
 
+	now := time.Now()
+	id := fmt.Sprintf("%d-%d", now.UnixNano(), atomic.AddInt64(&emailCounter, 1))
+
 	email := &email.Email{
-		ID:          fmt.Sprintf("%d", time.Now().UnixNano()),
+		ID:          id,
 		From:        s.from,
 		To:          s.recipients,
 		Subject:     msg.Header.Get("Subject"),
@@ -72,7 +78,7 @@ func (s *Session) Data(r io.Reader) error {
 		HTMLBody:    htmlBody,
 		Attachments: attachments,
 		Headers:     headers,
-		ReceivedAt:  time.Now(),
+		ReceivedAt:  now,
 	}
 
 	s.store.Add(email)

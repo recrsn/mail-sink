@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Email, ServerInfo, clearEmails, fetchEmails, fetchServerInfo } from './lib/api'
 import { EmailList } from './components/EmailList'
 import { EmailDetail } from './components/EmailDetail'
@@ -19,6 +19,8 @@ function App() {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   const [serverInfo, setServerInfo] = useState<ServerInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const selectedEmailRef = useRef<Email | null>(null)
+  selectedEmailRef.current = selectedEmail
 
   // Fetch emails on load and periodically
   useEffect(() => {
@@ -29,8 +31,8 @@ function App() {
         setEmails(data)
 
         // If we have a selected email, update it with fresh data
-        if (selectedEmail) {
-          const updatedEmail = data.find(e => e.id === selectedEmail.id)
+        if (selectedEmailRef.current) {
+          const updatedEmail = data.find(e => e.id === selectedEmailRef.current!.id)
           if (updatedEmail) {
             setSelectedEmail(updatedEmail)
           }
@@ -53,7 +55,7 @@ function App() {
     fetchServerInfo().then(setServerInfo).catch(console.error)
 
     return () => clearInterval(interval)
-  }, [selectedEmail])
+  }, [])
 
   const handleRefresh = async () => {
     try {

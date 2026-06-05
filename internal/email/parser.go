@@ -1,10 +1,12 @@
 package email
 
 import (
+	"encoding/base64"
 	"io"
 	"mime"
-	"strings"
 	"mime/multipart"
+	"mime/quotedprintable"
+	"strings"
 )
 
 func ExtractMessageParts(msg io.Reader, headers map[string][]string) (textBody, htmlBody string, attachments []Attachment) {
@@ -32,7 +34,15 @@ func ExtractMessageParts(msg io.Reader, headers map[string][]string) (textBody, 
 			continue
 		}
 
-		content, err := io.ReadAll(part)
+		var partReader io.Reader = part
+		switch strings.ToLower(strings.TrimSpace(part.Header.Get("Content-Transfer-Encoding"))) {
+		case "quoted-printable":
+			partReader = quotedprintable.NewReader(part)
+		case "base64":
+			partReader = base64.NewDecoder(base64.StdEncoding, part)
+		}
+
+		content, err := io.ReadAll(partReader)
 		if err != nil {
 			continue
 		}
@@ -56,7 +66,7 @@ func ExtractMessageParts(msg io.Reader, headers map[string][]string) (textBody, 
 				Filename:    filename,
 				ContentType: partMediaType,
 				Size:        len(content),
-				Content:     string(content),
+				Content:     content,
 			})
 		}
 	}
