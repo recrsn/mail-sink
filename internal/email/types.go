@@ -6,10 +6,11 @@ import (
 )
 
 type Attachment struct {
-	Filename    string `json:"filename"`
-	ContentType string `json:"contentType"`
-	Size        int    `json:"size"`
-	Content     []byte `json:"content"`
+	Filename      string `json:"filename"`
+	ContentType   string `json:"contentType"`
+	Size          int    `json:"size"`
+	Content       string `json:"content"`
+	ContentBase64 []byte `json:"content_base64,omitempty"`
 }
 
 type Email struct {
@@ -44,7 +45,7 @@ func (s *Store) Add(email *Email) {
 func (s *Store) GetAll() []*Email {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
-	
+
 	// Return a copy to avoid race conditions
 	emailsCopy := make([]*Email, len(s.emails))
 	copy(emailsCopy, s.emails)
@@ -54,7 +55,7 @@ func (s *Store) GetAll() []*Email {
 func (s *Store) GetByID(id string) *Email {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
-	
+
 	for _, email := range s.emails {
 		if email.ID == id {
 			return email

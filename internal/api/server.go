@@ -48,17 +48,17 @@ func (s *Server) Start() error {
 	api := r.Group("/api")
 	{
 		api.GET("/emails", func(c *gin.Context) {
-			c.JSON(http.StatusOK, s.store.GetAll())
+			c.JSON(http.StatusOK, emailsForJSON(s.store.GetAll()))
 		})
 
 		api.GET("/emails/:id", func(c *gin.Context) {
 			id := c.Param("id")
-			email := s.store.GetByID(id)
-			if email == nil {
+			message := s.store.GetByID(id)
+			if message == nil {
 				c.JSON(http.StatusNotFound, gin.H{"error": "Email not found"})
 				return
 			}
-			c.JSON(http.StatusOK, email)
+			c.JSON(http.StatusOK, emailForJSON(message))
 		})
 
 		api.DELETE("/emails", func(c *gin.Context) {
@@ -78,4 +78,33 @@ func (s *Server) Start() error {
 	log.Printf("Starting HTTP server on :%d", s.httpPort)
 	log.Printf("Web UI available at http://localhost:%d", s.httpPort)
 	return r.Run(fmt.Sprintf(":%d", s.httpPort))
+}
+
+func emailsForJSON(emails []*email.Email) []*email.Email {
+	result := make([]*email.Email, len(emails))
+	for i, message := range emails {
+		result[i] = emailForJSON(message)
+	}
+	return result
+}
+
+func emailForJSON(message *email.Email) *email.Email {
+	if message == nil {
+		return nil
+	}
+
+	result := *message
+	if len(message.Attachments) == 0 {
+		return &result
+	}
+
+	result.Attachments = make([]email.Attachment, len(message.Attachments))
+	copy(result.Attachments, message.Attachments)
+	for i := range result.Attachments {
+		if len(result.Attachments[i].ContentBase64) == 0 && result.Attachments[i].Content != "" {
+			result.Attachments[i].ContentBase64 = []byte(result.Attachments[i].Content)
+		}
+	}
+
+	return &result
 }

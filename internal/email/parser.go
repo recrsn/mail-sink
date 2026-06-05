@@ -13,14 +13,14 @@ func ExtractMessageParts(msg io.Reader, headers map[string][]string) (textBody, 
 	mediaType, params, err := mime.ParseMediaType(getHeaderValue(headers, "Content-Type"))
 	if err != nil || !strings.HasPrefix(mediaType, "multipart/") {
 		// Not a multipart message, treat the body as text
-		body, _ := io.ReadAll(msg)
+		body, _ := io.ReadAll(transferDecodedReader(msg, getHeaderValue(headers, "Content-Transfer-Encoding")))
 		return string(body), "", nil
 	}
 
 	boundary := params["boundary"]
 	if boundary == "" {
 		// Invalid multipart message
-		body, _ := io.ReadAll(msg)
+		body, _ := io.ReadAll(transferDecodedReader(msg, getHeaderValue(headers, "Content-Transfer-Encoding")))
 		return string(body), "", nil
 	}
 
@@ -34,15 +34,7 @@ func ExtractMessageParts(msg io.Reader, headers map[string][]string) (textBody, 
 			continue
 		}
 
-		var partReader io.Reader = part
-		switch strings.ToLower(strings.TrimSpace(part.Header.Get("Content-Transfer-Encoding"))) {
-		case "quoted-printable":
-			partReader = quotedprintable.NewReader(part)
-		case "base64":
-			partReader = base64.NewDecoder(base64.StdEncoding, part)
-		}
-
-		content, err := io.ReadAll(partReader)
+		content, err := io.ReadAll(transferDecodedReader(part, part.Header.Get("Content-Transfer-Encoding")))
 		if err != nil {
 			continue
 		}
@@ -63,15 +55,27 @@ func ExtractMessageParts(msg io.Reader, headers map[string][]string) (textBody, 
 		} else if filename != "" || strings.HasPrefix(partMediaType, "application/") || strings.HasPrefix(partMediaType, "image/") {
 			// It's likely an attachment
 			attachments = append(attachments, Attachment{
-				Filename:    filename,
-				ContentType: partMediaType,
-				Size:        len(content),
-				Content:     content,
+				Filename:      filename,
+				ContentType:   partMediaType,
+				Size:          len(content),
+				Content:       string(content),
+				ContentBase64: content,
 			})
 		}
 	}
 
 	return textBody, htmlBody, attachments
+}
+
+func transferDecodedReader(r io.Reader, encoding string) io.Reader {
+	switch strings.ToLower(strings.TrimSpace(encoding)) {
+	case "quoted-printable":
+		return quotedprintable.NewReader(r)
+	case "base64":
+		return base64.NewDecoder(base64.StdEncoding, r)
+	default:
+		return r
+	}
 }
 
 func getHeaderValue(headers map[string][]string, key string) string {
